@@ -25,7 +25,7 @@ jobs:
           bin=$(git diff --numstat "$(git hash-object -t tree /dev/null)" HEAD | awk '$1=="-"{print $3}' | grep -v -E '^docs/images/[^/]+\.png$' || true)
           if [ -n "$bin" ]; then echo "::error::binary files tracked:"; echo "$bin"; exit 1; fi
 
-      - name: Build player zip (git archive: honours .gitattributes eol + export-ignore)
+      - name: "Build player zip (git archive, honours .gitattributes eol + export-ignore)"
         run: |
           name="LE_StashManager-$VER"
           git archive --format=zip --prefix="$name/" -o "$name.zip" HEAD
