@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- One-line installer / updater (`install.ps1`): latest release, SHA-256 check, keeps your data.
+- README screenshot gallery.
+
 ## 0.2.0
 
 - **Fix:** the game could hang when quitting while StashManager was attached. The agent now only

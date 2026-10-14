@@ -24,6 +24,17 @@ doom-clicking through stash tabs.
 Every action it takes is one the stash UI already offers (move an item, configure or buy a tab),
 sent the same way the game's own buttons send it.
 
+## Screenshots
+
+| | |
+|---|---|
+| ![Main page](docs/images/overview.png) | ![Search](docs/images/search.png) |
+| **Main page**: tabs with values, grid with item art and price tags | **Search** across all tabs: affixes, tiers, rolls, types |
+| ![Tooltip](docs/images/tooltip.png) | ![Configure tab](docs/images/configure-tab.png) |
+| **Tooltip**: affix values, ranges, roll %, market price | **Configure tab** like in game, with a live "matches N items" preview |
+| ![Presets](docs/images/presets.png) | ![Auto-sort](docs/images/autosort.png) |
+| **Presets**: whole layouts, reusing your tabs, cost shown first | **Auto-sort** with plan and space forecast |
+
 ## What it does
 
 - **See your whole stash** in the browser, with the game's own item art (extracted from *your*
@@ -56,9 +67,19 @@ sent the same way the game's own buttons send it.
 
 ## Install
 
-```bat
-setup.bat
+**One line** (PowerShell; installs to `Documents\LE_StashManager`, run it again to update):
+
+```powershell
+irm https://raw.githubusercontent.com/k0ss11/LE_StashManager/main/install.ps1 | iex
 ```
+
+It downloads the latest [release](https://github.com/k0ss11/LE_StashManager/releases) zip, checks its
+SHA-256, extracts it (keeping your `data/` and settings on update) and runs `setup.bat`. Prefer to read
+it first? Download [`install.ps1`](install.ps1), look at it, then
+`powershell -ExecutionPolicy Bypass -File install.ps1 [-Dir D:\Tools\LE_StashManager]`.
+
+**Manually:** download `LE_StashManager-<version>.zip` from
+[Releases](https://github.com/k0ss11/LE_StashManager/releases), unzip, run `setup.bat`.
 
 `setup.bat` checks your Python version, creates a private environment in `.venv`, installs the
 pinned packages from PyPI (`frida`, `UnityPy`), finds Last Epoch through Steam, checks
