@@ -11,6 +11,10 @@ import threading
 import time
 import urllib.request
 
+import log_setup
+
+log = log_setup.get('prices')
+
 BASE = 'https://bazaar.leoverlay.com'
 CACHE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', 'prices')
 REFRESH_SECONDS = 3600
@@ -58,7 +62,9 @@ def _feed(name, path):
         else:
             entry = {'fetchedAt': time.time(), 'etag': etag, 'body': body}
         _store(name, entry)
+        log.info('price feed %s refreshed (HTTP %s)', name, status)
     except Exception as e:  # keep serving the old cache on network errors / 429
+        log.warning('price feed %s refresh failed: %s (using cache: %s)', name, e, bool(entry))
         if not entry:
             raise RuntimeError(f'price feed {name} unavailable: {e}')
     return entry
@@ -79,8 +85,9 @@ def _idols_refresh(cycle):
             page += 1
             time.sleep(3)
         _store(f'idols_{cycle}', {'fetchedAt': time.time(), 'body': {'quotes': list(quotes.values()), 'total': total}})
-    except Exception:
-        pass  # keep previous cache
+        log.info('idol prices refreshed: %d combinations', len(quotes))
+    except Exception as e:
+        log.warning('idol price refresh failed: %s (keeping previous cache)', e)
     finally:
         _idol_refresh.pop(cycle, None)
 

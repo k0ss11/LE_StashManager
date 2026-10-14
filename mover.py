@@ -16,6 +16,10 @@ Coordinates are game grid coordinates (origin bottom-left).
 import threading
 import time
 
+import log_setup
+
+log = log_setup.get('mover')
+
 STASH, INVENTORY = 21, 1
 
 
@@ -86,6 +90,7 @@ class MoveJob:
 
     def _say(self, msg, kind='info'):
         self.log.append({'t': time.time(), 'kind': kind, 'msg': msg})
+        (log.warning if kind == 'bad' else log.info)(msg)
 
     def _snap(self):
         return self.client.snapshot(True)
@@ -126,6 +131,7 @@ class MoveJob:
 
     def _run(self):
         self.state = 'running'
+        log.info('move job started: %d moves', len(self.moves))
         try:
             groups = {}
             for m in self.moves:
@@ -140,6 +146,7 @@ class MoveJob:
             self.state = 'stopped'
             self._say(str(e), 'bad')
         except Exception as e:  # earlier moves stay applied; leftovers are in the inventory
+            log.exception('move job failed after %d moves', self.done)
             self.state = 'failed'
             self.error = str(e)
             self._say(f'Stopped: {e}', 'bad')

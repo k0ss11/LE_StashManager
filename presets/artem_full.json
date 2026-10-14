@@ -1,7 +1,7 @@
 {
  "name": "Artem-style full layout",
  "version": 1,
- "description": "Popular community layout (Artem): exalts per slot, uniques split by LP / Weaver's Will (+overflow), legendary, sets, idols by size + altars, crafting bases (magic/rare), 3 dumps. 24 tabs.",
+ "description": "Popular community layout (Artem): exalts per slot, uniques split by LP (0 / 1 / 2 / 3+) and Weaver's Will, legendary, sets, idols by size + altars, crafting bases (magic/rare, 3 tabs), 3 dumps. 28 tabs.",
  "folders": [
   {
    "name": "Exalts",
@@ -156,7 +156,7 @@
    "color": 12,
    "tabs": [
     {
-     "name": "Uniques",
+     "name": "LP0 Uniques",
      "icon": 23,
      "color": 12,
      "priority": {
@@ -168,7 +168,7 @@
      }
     },
     {
-     "name": "Uniques 2",
+     "name": "LP0 Uniques 2",
      "icon": 23,
      "color": 12,
      "priority": {
@@ -180,13 +180,39 @@
      }
     },
     {
-     "name": "LP Uniques",
+     "name": "LP1 Uniques",
      "icon": 23,
-     "color": 12,
+     "color": 3,
      "priority": {
       "rarity": 8,
       "potential": {
        "MinLegendaryPotential": 1,
+       "MaxLegendaryPotential": 1,
+       "MaxWeaversWill": 0
+      }
+     }
+    },
+    {
+     "name": "LP2 Uniques",
+     "icon": 23,
+     "color": 11,
+     "priority": {
+      "rarity": 8,
+      "potential": {
+       "MinLegendaryPotential": 2,
+       "MaxLegendaryPotential": 2,
+       "MaxWeaversWill": 0
+      }
+     }
+    },
+    {
+     "name": "LP3+ Uniques",
+     "icon": 23,
+     "color": 13,
+     "priority": {
+      "rarity": 8,
+      "potential": {
+       "MinLegendaryPotential": 3,
        "MaxWeaversWill": 0
       }
      }
@@ -311,6 +337,22 @@
    "tabs": [
     {
      "name": "Crafting Bases",
+     "icon": 17,
+     "color": 0,
+     "priority": {
+      "rarity": 6
+     }
+    },
+    {
+     "name": "Crafting Bases 2",
+     "icon": 17,
+     "color": 0,
+     "priority": {
+      "rarity": 6
+     }
+    },
+    {
+     "name": "Crafting Bases 3",
      "icon": 17,
      "color": 0,
      "priority": {

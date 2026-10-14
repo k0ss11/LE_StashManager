@@ -159,6 +159,9 @@
   table.cap th, table.cap td { text-align: left; padding: 3px 6px; border-bottom: 1px solid var(--line); }
   table.cap tr.bad td { color: var(--bad); } table.cap tr.warn td { color: #e8c66a; }
   table.cap button { font-size: 11px; padding: 1px 6px; }
+  #firstrun { display: flex; gap: 12px; align-items: center; padding: 8px 16px; background: #d9a44122;
+    border-bottom: 1px solid var(--accent); }
+  #firstrun[hidden] { display: none; }
   #ac { position: fixed; z-index: 20; max-height: 320px; overflow: auto; background: var(--panel);
     border: 1px solid var(--accent); border-radius: 4px; box-shadow: 0 6px 24px #000a; display: none; }
   #ac .opt { display: flex; justify-content: space-between; gap: 12px; padding: 4px 8px; cursor: pointer; white-space: nowrap; }
@@ -175,6 +178,7 @@
   <span id="near" class="pill" title="Stash panel open in game (closes automatically when you walk away)">stash ?</span>
   <span id="err"></span>
   <span class="spacer"></span>
+  <a class="muted" href="/api/diagnostics" target="_blank" title="report for bug reports: versions, game build, recent log" style="font-size:11px">diagnostics</a>
   <label class="muted"><input type="checkbox" id="auto" checked> auto refresh</label>
   <button id="refresh">Refresh</button>
 </header>
@@ -699,5 +703,6 @@ setInterval(() => { if ($('auto').checked && !document.hidden && !window.autoRef
 <script src="presets.js"></script>
 <script src="sort.js"></script>
 <script src="prices.js"></script>
+<script src="firstrun.js"></script>
 </body>
 </html>

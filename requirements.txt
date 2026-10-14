@@ -1,2 +1,4 @@
 # Runtime: injects agent/agent.js into the game (main-thread calls for stash actions).
 frida==17.8.2
+# Item pictures: reads sprites from your local game files (tools/extract_icons.py, "Extract item pictures" button).
+UnityPy==1.25.4

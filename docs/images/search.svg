@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="540" viewBox="0 0 960 540">
+  <rect width="960" height="540" fill="#14161a"/>
+  <rect x="12" y="12" width="936" height="516" fill="none" stroke="#d9a441" stroke-width="2" stroke-dasharray="10 8"/>
+  <text x="480" y="250" fill="#d9a441" font-family="Segoe UI, sans-serif" font-size="34" text-anchor="middle">Screenshot: Search</text>
+  <text x="480" y="295" fill="#8a909b" font-family="Segoe UI, sans-serif" font-size="17" text-anchor="middle">affix picker, tier / roll filters, item type dropdown, results across all tabs</text>
+  <text x="480" y="330" fill="#5d636d" font-family="Segoe UI, sans-serif" font-size="14" text-anchor="middle">placeholder - replace docs/images/search.svg with search.png and update the link</text>
+</svg>

@@ -11,10 +11,16 @@ AGENT = r"""
 const M = Process.getModuleByName('GameAssembly.dll');
 const f = (n, r, a) => new NativeFunction(M.getExportByName(n), r, a);
 const dom = f('il2cpp_domain_get', 'pointer', []);
-f('il2cpp_thread_attach', 'pointer', ['pointer'])(dom());
+const attach = () => f('il2cpp_thread_attach', 'pointer', ['pointer'])(dom());
+const detach = t => f('il2cpp_thread_detach', 'void', ['pointer'])(t);  // never stay attached: blocks game exit
 const s = p => p.isNull() ? '' : p.readUtf8String();
 rpc.exports = {
   inspect(ns, name) {
+    const th = attach();
+    try { return inspectImpl(ns, name); } finally { detach(th); }
+  },
+};
+function inspectImpl(ns, name) {
     const out = [];
     const sz = Memory.alloc(8);
     const asms = f('il2cpp_domain_get_assemblies', 'pointer', ['pointer', 'pointer'])(dom(), sz);
@@ -35,8 +41,7 @@ rpc.exports = {
         out.push('  ' + s(f('il2cpp_method_get_name', 'pointer', ['pointer'])(x)) + '/' + f('il2cpp_method_get_param_count', 'uint32', ['pointer'])(x));
     }
     return out.join('\n') || 'not found';
-  },
-};
+}
 """
 
 if __name__ == '__main__':

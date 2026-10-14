@@ -43,7 +43,9 @@ const m_pname = f('il2cpp_method_get_param_name', 'pointer', ['pointer', 'uint32
 const m_ret = f('il2cpp_method_get_return_type', 'pointer', ['pointer']);
 const m_flags = f('il2cpp_method_get_flags', 'uint32', ['pointer', 'pointer']);
 
-thread_attach(domain_get());
+const thread_detach = f('il2cpp_thread_detach', 'void', ['pointer']);
+// attach only per call: a permanently attached foreign thread blocks the game from exiting
+const scoped = fn => (...a) => { const t = thread_attach(domain_get()); try { return fn(...a); } finally { thread_detach(t); } };
 const s = p => p.isNull() ? '' : p.readUtf8String();
 const tn = t => t.isNull() ? '?' : s(t_name(t));
 let classes = null;
@@ -80,7 +82,7 @@ function dumpClass(k, img) {
 }
 
 rpc.exports = {
-  init(images) {
+  init: scoped(function (images) {
     classes = [];
     const sz = Memory.alloc(8); const arr = get_asms(domain_get(), sz); const n = sz.readU32();
     for (let i = 0; i < n; i++) {
@@ -90,14 +92,14 @@ rpc.exports = {
       for (let j = 0; j < cc; j++) classes.push([img_cls(img, j), iname]);
     }
     return classes.length;
-  },
-  chunk(start, count) {
+  }),
+  chunk: scoped(function (start, count) {
     const r = [];
     for (let i = start; i < Math.min(start + count, classes.length); i++) {
       try { r.push(dumpClass(classes[i][0], classes[i][1])); } catch (e) { r.push('// error ' + e); }
     }
     return r.join('\n\n');
-  },
+  }),
 };
 """
 

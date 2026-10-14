@@ -5,12 +5,11 @@
 
 .EXAMPLE
   .\setup.ps1                 # normal setup
-  .\setup.ps1 -Icons          # also install UnityPy (needed only for tools\extract_icons.py)
   .\setup.ps1 -GamePath "D:\SteamLibrary\steamapps\common\Last Epoch"
 #>
 param(
     [string]$GamePath,
-    [switch]$Icons
+    [switch]$Icons   # kept for compatibility: UnityPy is now always installed
 )
 
 $ErrorActionPreference = 'Stop'
@@ -33,6 +32,7 @@ foreach ($cand in @(@('py', '-3'), @('python'))) {
 }
 if (-not $py) { Fail "Python not found. Install Python $MinPython+ from https://www.python.org/downloads/ (tick 'Add to PATH')." }
 if ([version]$v -lt $MinPython) { Fail "Python $v found, need $MinPython+." }
+if ([version]$v -ge [version]'3.14') { Warn "Python $v is newer than tested (3.11-3.13); if pip tries to compile packages, install Python 3.13." }
 Ok "Python $v"
 
 # ---------------------------------------------------------------- virtual environment + packages
@@ -47,13 +47,9 @@ Ok "virtual environment: .venv"
 & $vpy -m pip install --disable-pip-version-check -q --upgrade pip
 & $vpy -m pip install --disable-pip-version-check -q -r (Join-Path $Root 'requirements.txt')
 if ($LASTEXITCODE -ne 0) { Fail 'pip install failed (see output above)' }
-if ($Icons) {
-    & $vpy -m pip install --disable-pip-version-check -q -r (Join-Path $Root 'requirements-icons.txt')
-    if ($LASTEXITCODE -ne 0) { Fail 'pip install of icon tools failed' }
-}
 $fridaV = & $vpy -c "import frida; print(frida.__version__)"
 Ok "frida $fridaV (from PyPI)"
-if ($Icons) { Ok ("UnityPy " + (& $vpy -c "import UnityPy; print(UnityPy.__version__)")) }
+Ok ("UnityPy " + (& $vpy -c "import UnityPy; print(UnityPy.__version__)"))
 
 # ---------------------------------------------------------------- Node (optional)
 try { $nodeV = (& node --version) 2>$null } catch { $nodeV = $null }
@@ -109,5 +105,5 @@ Ok 'wrote config.json'
 Write-Host "`nDone. Next:"
 Write-Host '  1. Start Last Epoch and load your character.'
 Write-Host '  2. Run run.bat  (opens http://127.0.0.1:8100)'
-if ($Icons) { Write-Host '  3. Optional, once per game patch: .venv\Scripts\python tools\extract_icons.py' }
+Write-Host '  3. On first start the page offers "Extract item pictures" (game must be running).'
 Write-Host "`nRead README.md 'Safety' before using it online."

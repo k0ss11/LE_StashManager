@@ -43,6 +43,14 @@ def main():
     ap.add_argument('--size', type=int, default=160, help='max icon edge in px')
     ap.add_argument('--bundles', default=BUNDLE_DIR)
     a = ap.parse_args()
+    run(size=a.size, bundles=a.bundles)
+    extract_tab_icons(a.bundles)
+
+
+def run(client=None, size=160, bundles=BUNDLE_DIR, log=print):
+    """Extract item icons. `client`: an attached GameClient to reuse (host.py), else one is attached here."""
+    a = argparse.Namespace(size=size, bundles=bundles)
+    print = log  # noqa: A001 - route progress to the caller (host shows it on the page)
 
     with open(os.path.join(ROOT, 'data', 'gamedata.json'), encoding='utf-8') as fh:
         gd = json.load(fh)
@@ -54,9 +62,11 @@ def main():
         reqs.append(('u%d' % u['id'], {'type': u['baseType'], 'sub': 0, 'unique': True, 'uniqueId': u['id']}))
     print(f'[*] resolving {len(reqs)} icons in game')
 
-    c = GameClient()
-    c.attach()
-    time.sleep(0.4)
+    own = client is None
+    c = client or GameClient()
+    if own:
+        c.attach()
+        time.sleep(0.4)
     refs = {}
     for i in range(0, len(reqs), 100):  # small batches: each batch runs in one game frame
         chunk = reqs[i:i + 100]
@@ -64,7 +74,8 @@ def main():
         for (key, _), ref in zip(chunk, res):
             if ref and not ref.get('error') and ref.get('file'):
                 refs[key] = ref
-    c.detach()
+    if own:
+        c.detach()
     print(f'[+] resolved {len(refs)}/{len(reqs)}')
 
     by_bundle = defaultdict(list)
@@ -105,7 +116,8 @@ def main():
     print(f'\n[+] {len(saved)} images, {len(index)} items mapped, {failed} failed -> {OUT_DIR}')
 
 
-def extract_tab_icons(bundle_dir):
+def extract_tab_icons(bundle_dir=BUNDLE_DIR, log=print):
+    print = log  # noqa: A001
     path = os.path.join(ROOT, 'data', 'tabstyles.json')
     if not os.path.exists(path):
         print('[i] no data/tabstyles.json yet (open the stash with host.py running) - skipping tab icons')
@@ -131,4 +143,3 @@ def extract_tab_icons(bundle_dir):
 
 if __name__ == '__main__':
     main()
-    extract_tab_icons(BUNDLE_DIR)

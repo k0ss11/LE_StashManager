@@ -5,6 +5,10 @@ import time
 
 import frida
 
+import log_setup
+
+log = log_setup.get('game')
+
 AGENT_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'agent', 'agent.js')
 PROCESS_NAME = 'Last Epoch.exe'
 
@@ -27,9 +31,14 @@ class GameClient:
         self._script = self._session.create_script(source)
         self._script.on('message', self._on_message)
         self._script.load()
+        log.info('attached to %s, agent loaded', PROCESS_NAME)
 
     def detach(self):
         if self._script:
+            try:
+                self._script.exports_sync.dispose()  # drop the Update hook first
+            except Exception:
+                pass
             try:
                 self._script.unload()
                 self._session.detach()
@@ -38,13 +47,13 @@ class GameClient:
         self._script = self._session = None
 
     def _on_detached(self, reason, crash):
-        print(f'[!] detached: {reason}')
+        log.warning('detached from game: %s%s', reason, f' (crash: {crash.summary})' if crash else '')
         self._script = self._session = None
 
     @staticmethod
     def _on_message(message, data):
         if message.get('type') == 'error':
-            print('[agent error]', message.get('stack') or message.get('description'))
+            log.error('agent error: %s', message.get('stack') or message.get('description'))
 
     @property
     def api(self):
@@ -74,9 +83,11 @@ class GameClient:
                 res = self.api.result(cmd_id)
             if res is not None:
                 if not res['ok']:
+                    log.warning('op %s failed: %s | args %s', op, res['error'], str(args)[:300])
                     raise RuntimeError(f'{op} failed: {res["error"]}')
                 return res['value']
             time.sleep(0.02)
+        log.warning('op %s timed out after %ss (game paused / minimized?)', op, timeout)
         raise TimeoutError(f'{op} not executed (game paused / alt-tabbed?)')
 
     def run_batch(self, calls, delay_ms=40, timeout=30.0):

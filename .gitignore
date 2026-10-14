@@ -16,3 +16,9 @@ dump/
 data/presets/
 data/rules.json
 data/prices/
+
+# access key for LAN mode (run.bat lan)
+data/lan_key.txt
+
+# logs
+data/logs/

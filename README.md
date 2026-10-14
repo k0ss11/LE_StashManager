@@ -9,6 +9,21 @@ Python, JavaScript and HTML.
 > **Not affiliated with or endorsed by Eleventh Hour Games.** Read [Safety](#safety) before using it
 > on an online character.
 
+![Main page](docs/images/overview.svg)
+
+## Why this exists
+
+This is **not a cheat** and not meant to hack the game. It gives no advantage in play: no map
+reveal, no loot or combat automation, nothing outside the stash.
+
+I just want a normal stash interface that the game doesn't offer (yet): search across all tabs,
+see what my items are worth, set up tabs once instead of every season, and put items where they
+belong without hundreds of clicks. I want to spend my time playing Last Epoch, not
+doom-clicking through stash tabs.
+
+Every action it takes is one the stash UI already offers (move an item, configure or buy a tab),
+sent the same way the game's own buttons send it.
+
 ## What it does
 
 - **See your whole stash** in the browser, with the game's own item art (extracted from *your*
@@ -35,26 +50,32 @@ Python, JavaScript and HTML.
 ## Requirements
 
 - Windows, Last Epoch (Steam).
-- [Python 3.11+](https://www.python.org/downloads/) (tick "Add python.exe to PATH").
+- [Python 3.11–3.13](https://www.python.org/downloads/) (tick "Add python.exe to PATH").
+- Nothing to compile: see [Does anything need compiling?](docs/TROUBLESHOOTING.md#does-anything-need-compiling)
 - Optional: [Node.js](https://nodejs.org/) only for `tools/apply_preset.js` (command-line presets).
 
 ## Install
 
 ```bat
-setup.bat            :: or: setup.bat -Icons   (also installs the item-art extractor)
+setup.bat
 ```
 
 `setup.bat` checks your Python version, creates a private environment in `.venv`, installs the
-pinned packages from PyPI (`frida`, optionally `UnityPy`), finds Last Epoch through Steam, checks
+pinned packages from PyPI (`frida`, `UnityPy`), finds Last Epoch through Steam, checks
 your game build against the [tested builds](supported_builds.json) and writes `config.json`.
 
 ## Use
 
 1. Start Last Epoch and load your character.
-2. Run `run.bat`. It opens <http://127.0.0.1:8100>.
+2. Run `run.bat`. It opens <http://127.0.0.1:8100>. (`run.bat lan` = also reachable from your phone /
+   other devices in your network, protected by an access key.)
 3. Viewing and searching work anywhere. Anything that **changes** the stash (moving items,
    configuring or buying tabs) needs the **stash open in game**; the page shows "at stash" when it is.
-4. Optional, once per game patch: `.venv\Scripts\python tools\extract_icons.py` for item art.
+4. On first start the page offers **Extract item pictures** (game running, about a minute). It reads
+   the art from your local game files; nothing is downloaded.
+
+Full guide with screenshots: **[docs/USAGE.md](docs/USAGE.md)**. Problems:
+[docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md).
 
 ## How it works
 
@@ -67,7 +88,10 @@ browser (127.0.0.1:8100)  <->  host.py (Python)  <->  agent/agent.js  (inside th
 - **Changing** (move, configure, buy): `agent.js` queues each action and runs it on the game's
   main thread through the game's own functions, the same requests the stash UI sends. The server
   stays authoritative; StashManager only asks.
-- The web server listens on **127.0.0.1 only** and rejects requests from other websites.
+- The web server listens on **127.0.0.1 only** by default and rejects requests from other websites.
+  `run.bat lan` opens it to your network; every other device then needs the access key.
+- Logs go to `data/logs/` (access key and Windows user name redacted); the **diagnostics** link
+  gives a ready-to-paste report for bug reports.
 - The only outside connection is the price feed (`bazaar.leoverlay.com`), polled at most hourly.
   Nothing about your account or stash is sent anywhere.
 
@@ -89,7 +113,8 @@ browser (127.0.0.1:8100)  <->  host.py (Python)  <->  agent/agent.js  (inside th
 1. `setup.bat` reports whether your build is in `supported_builds.json`.
 2. Open the stash and run `.venv\Scripts\python tools\dev\crud_test.py` (spends no gold; every
    change is reverted). If something fails, please open an issue with its output.
-3. Game data (names, affixes) refreshes automatically; re-run `tools\extract_icons.py` for new art.
+3. Game data (names, affixes) refreshes automatically. For new item art run
+   `.venv\Scripts\python tools\extract_icons.py` (game running).
 
 ## Credits
 

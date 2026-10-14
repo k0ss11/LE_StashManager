@@ -27,19 +27,32 @@ const il2cpp = {
   method_get_pointer: m => m.readPointer(),
 };
 
-il2cpp.thread_attach(il2cpp.domain_get());
+// IL2CPP thread registration for calls made from the Frida thread.
+// IMPORTANT: never leave the Frida thread attached. An attached foreign thread keeps the game from
+// exiting (Unity waits for it on shutdown). Attach only for the duration of one call, then detach.
+const thread_detach = nf('il2cpp_thread_detach', 'void', ['pointer']);
+const _tc = GA.findExportByName('il2cpp_thread_current');
+const thread_current = _tc ? new NativeFunction(_tc, 'pointer', []) : () => ptr(0);
+let scopeDepth = 0;
+function il2cppScope(fn) {
+  // already attached: game main thread (tick) or a nested scope
+  if (scopeDepth > 0 || !thread_current().isNull()) return fn();
+  const t = il2cpp.thread_attach(il2cpp.domain_get());
+  scopeDepth++;
+  try { return fn(); } finally { scopeDepth--; thread_detach(t); }
+}
 
 // ---------------------------------------------------------------- metadata helpers
 
 const images = {};
-(function loadImages() {
+il2cppScope(function loadImages() {
   const size = Memory.alloc(8);
   const arr = il2cpp.get_assemblies(il2cpp.domain_get(), size);
   for (let i = 0; i < size.readU32(); i++) {
     const img = il2cpp.assembly_get_image(arr.add(i * 8).readPointer());
     images[il2cpp.image_get_name(img).readUtf8String()] = img;
   }
-})();
+});
 
 const classCache = {};
 function cls(name, ns = '', image = 'LE.dll') {
@@ -744,12 +757,20 @@ function tick() {
   notBefore = now + (cmd.delayMs ?? 150);
 }
 
-const updateMethod = method(cls('UpdateSystem', 'LE.CustomUpdate'), 'Update', 0);
-Interceptor.attach(updateMethod.readPointer(), { onEnter() { tick(); } });
+const updateMethod = il2cppScope(() => method(cls('UpdateSystem', 'LE.CustomUpdate'), 'Update', 0));
+const updateHook = Interceptor.attach(updateMethod.readPointer(), { onEnter() { tick(); } });
+
+// Let the game exit cleanly: drop the hook as soon as Unity starts quitting.
+try {
+  const kApp = il2cppScope(() => cls('Application', 'UnityEngine', 'UnityEngine.CoreModule.dll'));
+  const quit = il2cppScope(() => method(kApp, 'Internal_ApplicationQuit', 0));
+  Interceptor.attach(quit.readPointer(), { onEnter() { updateHook.detach(); queue.length = 0; } });
+} catch (e) { /* method name differs on this build: hook stays until the script unloads */ }
 
 rpc.exports = {
-  snapshot: withItems => snapshot(!!withItems),
-  gameData: () => readGameData(),
+  snapshot: withItems => il2cppScope(() => snapshot(!!withItems)),
+  gameData: () => il2cppScope(() => readGameData()),
+  dispose() { updateHook.detach(); queue.length = 0; return true; },
   state: () => Object.assign({ queued: queue.length, build: GA.size }, state),
   enqueue(op, args, delayMs) {
     if (!ops[op]) throw new Error('unknown op ' + op);
