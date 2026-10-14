@@ -11,7 +11,7 @@ link private; `host.py --lan --new-key` makes a new key and old links stop worki
 Reading and searching work anywhere in the game. Anything that **changes** your stash (moving items,
 configuring or buying tabs) needs the **stash open in game**. The header shows **at stash** when it is.
 
-![Main page](images/overview.svg)
+![Main page](images/overview.png)
 
 ## The page at a glance
 
@@ -24,7 +24,7 @@ configuring or buying tabs) needs the **stash open in game**. The header shows *
 
 Hover an item for its tooltip:
 
-![Item tooltip](images/tooltip.svg)
+![Item tooltip](images/tooltip.png)
 
 - name, rarity, base type, size
 - every affix: prefix / suffix, tier, rolled value with the tier's range, roll %
@@ -33,7 +33,7 @@ Hover an item for its tooltip:
 
 ## Search
 
-![Search](images/search.svg)
+![Search](images/search.png)
 
 - **Text**: words in the item name, base, or affixes. Wrap in slashes for a regex: `/crit.*multi/`.
 - **Affix conditions** (`+ affix condition`): start typing and pick an affix from the list. A picked
@@ -51,7 +51,7 @@ Hover an item for its tooltip:
 Hover a tab or folder in the left panel: **↑ / ↓** reorder, **⚙** configure. The top of the panel
 has **+ Tab** (buy) and **+ Folder**.
 
-![Configure tab](images/configure-tab.svg)
+![Configure tab](images/configure-tab.png)
 
 The Configure Tab window mirrors the game's:
 
@@ -65,7 +65,7 @@ it is empty.
 
 ## Presets
 
-![Presets](images/presets.svg)
+![Presets](images/presets.png)
 
 A preset is a whole stash layout: folders, tabs, icons, colours, rules and order.
 
@@ -81,7 +81,7 @@ Presets do not move items. Run **Auto-sort** afterwards.
 
 ## Auto-sort
 
-![Auto-sort](images/autosort.svg)
+![Auto-sort](images/autosort.png)
 
 Where an item goes, first match wins:
 

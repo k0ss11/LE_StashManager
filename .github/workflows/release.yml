@@ -1,0 +1,43 @@
+name: release
+
+# Push a tag like v0.2.0 (matching the VERSION file) to publish a release.
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Tag matches VERSION
+        run: |
+          v="$(tr -d '\r\n ' < VERSION)"
+          [ "v$v" = "$GITHUB_REF_NAME" ] || { echo "::error::tag $GITHUB_REF_NAME != VERSION $v"; exit 1; }
+          echo "VER=$v" >> "$GITHUB_ENV"
+
+      - name: Source only (no binary files tracked; screenshots in docs/images/*.png allowed)
+        run: |
+          bin=$(git diff --numstat "$(git hash-object -t tree /dev/null)" HEAD | awk '$1=="-"{print $3}' | grep -v -E '^docs/images/[^/]+\.png$' || true)
+          if [ -n "$bin" ]; then echo "::error::binary files tracked:"; echo "$bin"; exit 1; fi
+
+      - name: Build player zip (git archive: honours .gitattributes eol + export-ignore)
+        run: |
+          name="LE_StashManager-$VER"
+          git archive --format=zip --prefix="$name/" -o "$name.zip" HEAD
+          sha256sum "$name.zip" > "$name.zip.sha256"
+          echo "ZIP=$name.zip" >> "$GITHUB_ENV"
+
+      - name: Release notes from CHANGELOG.md
+        run: |
+          awk -v v="$VER" '$0 == "## " v {on=1; next} /^## / && on {exit} on' CHANGELOG.md > notes.md
+          printf '\n---\nDownload **%s**, unzip, run `setup.bat`, then `run.bat`. Source only: no executables.\nSHA-256: see `%s.sha256`.\n' "$ZIP" "$ZIP" >> notes.md
+
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" "$ZIP" "$ZIP.sha256" --title "LE StashManager $VER" --notes-file notes.md

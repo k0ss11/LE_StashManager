@@ -9,7 +9,7 @@ Python, JavaScript and HTML.
 > **Not affiliated with or endorsed by Eleventh Hour Games.** Read [Safety](#safety) before using it
 > on an online character.
 
-![Main page](docs/images/overview.svg)
+![Main page](docs/images/overview.png)
 
 ## Why this exists
 

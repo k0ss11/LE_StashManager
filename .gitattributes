@@ -1,0 +1,11 @@
+# Normalise text; Windows scripts must keep CRLF (cmd.exe misreads LF-only .bat files)
+* text=auto
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+*.svg text
+
+# Not part of the player download (git archive / release zip)
+.github/        export-ignore
+.gitattributes  export-ignore
+.gitignore      export-ignore

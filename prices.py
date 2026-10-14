@@ -144,8 +144,13 @@ def load(cycle=None, weavers_will=True):
         affs = [(a['id'], a['tier']) for a in i.get('affixes', [])]
         k = idol_key(i['itemType'], i['subType'], affs) + (':c' if i.get('corrupted') else '')
         idols[k] = [q['medianGold'], q.get('listingCount'), q.get('status')]
-        loose.setdefault(idol_key(i['itemType'], i['subType'], affs, with_tier=False), []).append(q['medianGold'])
-    loose = {k: [sorted(v)[len(v) // 2], len(v)] for k, v in loose.items()}
+        # same affixes at any tier: keep each combo's tiers so the page only compares against
+        # combos that are not better than the item (avoids pricing T1 idols like T4 ones)
+        # only well-listed quotes, same corruption state (corrupted idols price very differently)
+        if q.get('status') == 'available':
+            tiers = {a[0]: a[1] for a in affs}
+            lk = idol_key(i['itemType'], i['subType'], affs, with_tier=False) + (':c' if i.get('corrupted') else '')
+            loose.setdefault(lk, []).append([tiers, q['medianGold'], q.get('listingCount')])
     return {
         'ok': True, 'cycle': cycle,
         'idols': idols, 'idolsLoose': loose, 'idolsPending': ientry is None, 'cycles': cyc.get('cycles', []),

@@ -166,3 +166,15 @@ shown in the page header.
 - Move history with undo.
 - Read-only mode without Frida (external memory reads; no stash changes).
 - Affix shard icons; affix picker limited to the selected item type.
+
+## Releasing
+
+1. Bump `VERSION` and add a `## <version>` section to `CHANGELOG.md`.
+2. Commit, then tag and push the tag: `git tag v0.2.0 && git push origin v0.2.0`.
+3. GitHub Actions (`.github/workflows/release.yml`) checks the tag matches `VERSION`, refuses binary
+   files, builds `LE_StashManager-<version>.zip` with `git archive` (CRLF for `.bat`/`.ps1` from
+   `.gitattributes`, `.github` excluded), adds a SHA-256 file and publishes the release with the
+   changelog section as notes.
+
+`.github/workflows/ci.yml` runs on every push: no binaries, Python compiles, all JavaScript parses,
+JSON presets are valid.

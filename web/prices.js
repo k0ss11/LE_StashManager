@@ -24,9 +24,14 @@ function priceOf(it) {
     const affs = (it.affixes || []).map(a => `${a.id}:${a.tier - 1}`).sort();
     const exact = PRICES.idols?.[`${it.type}:${it.subType}:${affs.join(',')}${it.corrupted ? ':c' : ''}`];
     if (exact) return { gold: exact[0], count: exact[1], how: 'idol, exact affixes', low: exact[2] !== 'available' };
+    // fallback: same affixes listed at tiers <= this item's tiers (never a better idol) -> highest of those
     const ids = (it.affixes || []).map(a => String(a.id)).sort();
-    const sim = PRICES.idolsLoose?.[`${it.type}:${it.subType}:${ids.join(',')}`];
-    return sim ? { gold: sim[0], count: null, how: `idol, same affixes other tiers (${sim[1]} combos)`, low: true } : null;
+    const combos = PRICES.idolsLoose?.[`${it.type}:${it.subType}:${ids.join(',')}${it.corrupted ? ':c' : ''}`] || [];
+    const mine = Object.fromEntries((it.affixes || []).map(a => [a.id, a.tier - 1]));
+    const notBetter = combos.filter(([tiers]) => Object.entries(tiers).every(([id, t]) => t <= (mine[id] ?? -1)));
+    if (!notBetter.length) return null;
+    const best = notBetter.reduce((b, c) => (c[1] > b[1] ? c : b));
+    return { gold: best[1], count: best[2], how: 'idol, same affixes at lower or equal tiers', low: true };
   }
   if (it.rarity === 9) { // legendary: no direct feed -> max(unique base, best affix)
     const base = PRICES.uniques[`${it.uniqueId}:0`];
@@ -55,9 +60,10 @@ function priceOf(it) {
   return null;
 }
 
+// totals count confident prices only (low-volume quotes and estimates still show per item)
 function tabValue(tabId) {
   const c = snap?.containers[tabId];
-  return c ? c.items.reduce((s, it) => s + (priceOf(it)?.gold || 0), 0) : 0;
+  return c ? c.items.reduce((s, it) => { const p = priceOf(it); return s + (p && !p.low ? p.gold : 0); }, 0) : 0;
 }
 
 // ---------------------------------------------------------------- hooks into the page
@@ -74,7 +80,7 @@ render = function () {
   if (!snap || !PRICES) return;
   const total = snap.containers.reduce((s, c) => s + tabValue(c.index), 0);
   $('stashValue').textContent = `value ~${fmtGold(total)}`;
-  $('stashValue').title = `estimated asking value of priced items (cycle ${PRICES.cycle}, fetched ${new Date(PRICES.fetchedAt * 1000).toLocaleTimeString()})`;
+  $('stashValue').title = `asking value of items with a confident price (estimates excluded) (cycle ${PRICES.cycle}, fetched ${new Date(PRICES.fetchedAt * 1000).toLocaleTimeString()})`;
   // per-tab value next to counts
   document.querySelectorAll('#tabs .tab[data-tab]').forEach(el => {
     const v = tabValue(+el.dataset.tab);
@@ -100,7 +106,7 @@ showTip = function (it, x, y) {
   const p = priceOf(it);
   const tip = $('tip');
   tip.insertAdjacentHTML('beforeend', p
-    ? `<div class="tprice">~${fmtGold(p.gold)} gold <span class="muted">${p.count ?? '?'} listings · ${esc(p.how)}${p.low ? ' · low volume' : ''}</span></div>`
+    ? `<div class="tprice">~${fmtGold(p.gold)} gold <span class="muted">${p.count != null ? p.count + ' listings · ' : ''}${esc(p.how)}${p.low ? ' · estimate' : ''}</span></div>`
     : (PRICES ? '<div class="tprice muted">no price data</div>' : ''));
 };
 

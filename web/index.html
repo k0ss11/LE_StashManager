@@ -346,8 +346,18 @@ async function load() {
     if (selTab === null) selTab = snap.activeTab;
     render();
   } catch (e) {
-    $('conn').className = 'pill bad'; $('conn').textContent = 'no game';
-    $('err').textContent = e.message;
+    // translate connection states into something a player understands
+    const m = e.message || '';
+    const [pill, cls, text] =
+      /not in game/i.test(m) ? ['menu', 'pill', 'Game is running: load your character to see the stash.']
+      : /unable to find process|not attached|Failed to fetch/i.test(m) ? ['no game', 'pill bad', 'Start Last Epoch (and run.bat); the page connects by itself.']
+      : ['error', 'pill bad', m];
+    $('conn').className = cls; $('conn').textContent = pill;
+    $('err').textContent = '';
+    if (!snap) {
+      $('gridtitle').textContent = text;
+      $('grid').innerHTML = '';
+    } else $('err').textContent = text;
   }
 }
 
@@ -704,5 +714,6 @@ setInterval(() => { if ($('auto').checked && !document.hidden && !window.autoRef
 <script src="sort.js"></script>
 <script src="prices.js"></script>
 <script src="firstrun.js"></script>
+<script src="shots.js"></script>
 </body>
 </html>
