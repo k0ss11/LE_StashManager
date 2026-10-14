@@ -1,0 +1,18 @@
+# local environment / compiled
+.venv/
+__pycache__/
+*.pyc
+
+# machine-specific
+config.json
+
+# generated from YOUR game files - game content, never publish
+data/icons/
+data/gamedata.json
+data/tabstyles.json
+dump/
+
+# personal / cached
+data/presets/
+data/rules.json
+data/prices/

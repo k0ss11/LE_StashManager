@@ -1,0 +1,6 @@
+{
+ "note": "Game builds StashManager was tested on (Last Epoch_Data/build_hash.txt).",
+ "builds": [
+  { "buildHash": "8dfd6929fe2d10f2e77b7ed4c8e6910f49b2736b", "label": "Season 5 patch, tested 2026-10-14" }
+ ]
+}

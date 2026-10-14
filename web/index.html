@@ -1,0 +1,703 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>StashManager</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root {
+    --bg: #14161a; --panel: #1c1f25; --panel2: #23272f; --line: #2f343d;
+    --text: #d8dbe0; --muted: #8a909b; --accent: #d9a441; --ok: #5fbf77; --bad: #d0605e;
+    --cell: 34px;
+    --r-normal: #b9bcc2; --r-magic: #6f8fe8; --r-rare: #e5d04b; --r-exalted: #b065e0;
+    --r-unique: #e0803a; --r-set: #4fcf6a; --r-legendary: #e04a4a;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 13px/1.4 system-ui, Segoe UI, sans-serif; }
+  header { display: flex; align-items: center; gap: 16px; padding: 10px 16px; background: var(--panel); border-bottom: 1px solid var(--line); }
+  header h1 { margin: 0; font-size: 15px; letter-spacing: .5px; }
+  .pill { padding: 2px 10px; border-radius: 99px; font-size: 12px; background: var(--panel2); color: var(--muted); }
+  .pill.ok { color: #0d1a10; background: var(--ok); }
+  .pill.bad { color: #1a0d0d; background: var(--bad); }
+  header .spacer { flex: 1; }
+  button { background: var(--panel2); color: var(--text); border: 1px solid var(--line); border-radius: 4px; padding: 4px 10px; cursor: pointer; font: inherit; }
+  button:hover { border-color: var(--accent); }
+  input, select { background: var(--bg); color: var(--text); border: 1px solid var(--line); border-radius: 4px; padding: 4px 6px; font: inherit; }
+  input[type=number] { width: 56px; }
+  main { display: grid; grid-template-columns: 220px auto 1fr; gap: 0; height: calc(100vh - 47px); }
+  aside, section { overflow: auto; }
+  #tabs { background: var(--panel); border-right: 1px solid var(--line); padding: 8px 0; }
+  .folder { padding: 8px 12px 4px; color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .8px; }
+  .tab { display: flex; justify-content: space-between; padding: 5px 12px 5px 18px; cursor: pointer; border-left: 3px solid transparent; }
+  .tab:hover { background: var(--panel2); }
+  .tab.sel { background: var(--panel2); border-left-color: var(--accent); }
+  .tab.ingame::after { content: '●'; color: var(--ok); margin-left: 6px; font-size: 9px; }
+  .tab .n { color: var(--muted); font-variant-numeric: tabular-nums; }
+  .tab .hits { color: var(--accent); font-weight: 600; }
+  #gridwrap { padding: 16px; border-right: 1px solid var(--line); }
+  #gridtitle { margin-bottom: 8px; color: var(--muted); }
+  #grid { position: relative; background:
+      repeating-linear-gradient(0deg, var(--line) 0 1px, transparent 1px var(--cell)),
+      repeating-linear-gradient(90deg, var(--line) 0 1px, transparent 1px var(--cell)), #181a1f;
+    border: 1px solid var(--line); }
+  .item { position: absolute; border: 1px solid; border-radius: 3px; background: rgba(255,255,255,.04);
+    display: flex; flex-direction: column; justify-content: flex-end; align-items: flex-end; padding: 1px 2px;
+    font-size: 9px; overflow: hidden; cursor: default; transition: opacity .15s; }
+  .item:hover { background: rgba(255,255,255,.12); z-index: 2; }
+  .item.dim { opacity: .18; }
+  .item.hit { box-shadow: 0 0 0 2px var(--accent), 0 0 10px var(--accent); z-index: 1; }
+  .item img { position: absolute; inset: 2px; width: calc(100% - 4px); height: calc(100% - 4px);
+    object-fit: contain; pointer-events: none; }
+  .item .tiers { position: relative; color: var(--text); text-shadow: 0 0 3px #000, 0 0 2px #000; }
+  #tip .head { display: flex; gap: 10px; align-items: flex-start; }
+  #tip .head img { max-width: 64px; max-height: 96px; object-fit: contain; }
+  #search { padding: 14px 16px; }
+  #search h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .8px; color: var(--muted); margin: 14px 0 6px; }
+  #search h2:first-child { margin-top: 0; }
+  .row { display: flex; gap: 6px; align-items: center; margin-bottom: 6px; flex-wrap: wrap; }
+  .row input[type=text] { flex: 1; min-width: 140px; }
+  .rar { display: inline-flex; gap: 3px; align-items: center; margin-right: 8px; }
+  #results { margin-top: 8px; border-top: 1px solid var(--line); }
+  .res { padding: 6px 4px; border-bottom: 1px solid var(--line); cursor: pointer; }
+  .res:hover { background: var(--panel2); }
+  .res .where { color: var(--muted); font-size: 11px; }
+  .muted { color: var(--muted); }
+  #tip { position: fixed; pointer-events: none; z-index: 10; min-width: 220px; max-width: 340px; background: #0f1013f2;
+    border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; display: none; }
+  #tip .nm { font-weight: 600; margin-bottom: 4px; }
+  #tip .af { display: flex; justify-content: space-between; gap: 12px; }
+  .t7 { color: #ff6b6b; } .t6 { color: #e0a040; } .t5 { color: #e5d04b; }
+  #err { color: var(--bad); }
+  .msel { position: relative; flex: 1; min-width: 200px; }
+  .msel-btn { width: 100%; text-align: left; display: flex; justify-content: space-between; gap: 8px;
+    background: var(--bg); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+  .msel-btn span { overflow: hidden; text-overflow: ellipsis; }
+  .msel-panel { position: absolute; z-index: 15; left: 0; top: calc(100% + 2px); width: max(100%, 440px);
+    max-height: 380px; overflow: auto; background: var(--panel); border: 1px solid var(--accent);
+    border-radius: 4px; box-shadow: 0 6px 24px #000a; padding: 6px; display: none;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 2px 10px; }
+  .msel.open .msel-panel { display: grid; }
+  .msel-panel .tg { break-inside: avoid; margin-bottom: 6px; }
+  .msel-panel .ghead { color: var(--accent); font-size: 11px; text-transform: uppercase; letter-spacing: .6px;
+    padding: 3px 4px; cursor: pointer; user-select: none; border-bottom: 1px solid var(--line); margin-bottom: 2px; }
+  .msel-panel .ghead:hover { background: var(--panel2); }
+  .msel-panel .opt { display: flex; gap: 6px; align-items: center; padding: 2px 4px; cursor: pointer; border-radius: 3px; }
+  .msel-panel .opt:hover { background: var(--panel2); }
+  .msel-panel .opt .c { margin-left: auto; color: var(--muted); font-size: 10px; }
+  .msel-panel .opt.zero { opacity: .45; }
+  .msel-panel .tools { grid-column: 1 / -1; display: flex; justify-content: flex-end; gap: 6px; }
+  .tabtools { display: flex; gap: 6px; padding: 0 12px 8px; }
+  .tabtools button { flex: 1; font-size: 12px; }
+  .folder { display: flex; justify-content: space-between; align-items: center; border-left: 3px solid transparent; }
+  .tab { position: relative; box-shadow: inset 3px 0 0 var(--tc, transparent); }
+  .tab.sel { box-shadow: inset 3px 0 0 var(--accent); }
+  .acts { display: none; gap: 2px; margin-left: auto; margin-right: 6px; }
+  .acts b { font-weight: normal; color: var(--muted); padding: 0 3px; cursor: pointer; border-radius: 3px; }
+  .acts b:hover { color: var(--accent); background: var(--bg); }
+  .tab:hover .acts, .folder:hover .acts { display: inline-flex; }
+  .tab:hover .n, .tab:hover .hits { display: none; }
+  .pr { color: var(--accent); font-style: normal; font-size: 11px; }
+  #modal { position: fixed; inset: 0; z-index: 30; background: #000a; display: flex; align-items: flex-start;
+    justify-content: center; overflow: auto; padding: 40px 16px; }
+  .mbox { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 18px 22px;
+    width: min(900px, 100%); box-shadow: 0 10px 40px #000; }
+  .mbox h3 { margin: 0 0 12px; font-size: 16px; letter-spacing: 1px; text-transform: uppercase; color: var(--accent); }
+  .mbox label { display: block; color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .6px; margin: 10px 0 4px; }
+  .mbox label.prio { text-transform: none; font-size: 13px; color: var(--text); letter-spacing: 0; margin-top: 14px; }
+  .mbox input[type=text], .mbox select { width: 100%; }
+  .mbox .two { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  .swatches, .iconpick { display: grid; grid-template-columns: repeat(9, 30px); gap: 4px; }
+  .sw { width: 30px; height: 30px; padding: 0; border: 2px solid transparent; border-radius: 4px; }
+  .sw.on { border-color: #fff; box-shadow: 0 0 0 1px var(--accent); }
+  .ic { width: 30px; height: 30px; padding: 3px; font-size: 11px; display: flex; align-items: center; justify-content: center; }
+  .ic img { max-width: 100%; max-height: 100%; }
+  .tico { width: 14px; height: 14px; object-fit: contain; vertical-align: -2px; margin-right: 4px; opacity: .85; }
+  .ic.on { border-color: var(--accent); color: var(--accent); background: #d9a44122; }
+  .pgrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px 18px; margin-top: 6px; }
+  .pgrid .msel { min-width: 0; }
+  .pgrid .msel-panel { width: max(100%, 300px); grid-template-columns: 1fr; }
+  .pgrid .msel-q { width: 100%; margin-bottom: 4px; }
+  .mm { display: flex; gap: 6px; align-items: center; }
+  .mm input { width: 100%; }
+  #prioForm.off { opacity: .35; pointer-events: none; }
+  .preview { margin-top: 14px; padding: 8px 10px; background: var(--bg); border-radius: 4px; }
+  .mbox .cost { margin-top: 8px; }
+  .mbox .err { color: var(--bad); margin-top: 8px; min-height: 1em; }
+  .btns { display: flex; gap: 8px; justify-content: flex-end; margin-top: 14px; }
+  button.primary { background: #d9a44133; border-color: var(--accent); }
+  button.danger { border-color: var(--bad); color: var(--bad); }
+  button:disabled { opacity: .5; cursor: not-allowed; }
+  .plist { max-height: 260px; overflow: auto; border: 1px solid var(--line); border-radius: 4px; }
+  .pitem { padding: 6px 8px; cursor: pointer; border-bottom: 1px solid var(--line); }
+  .pitem:hover { background: var(--panel2); }
+  .pitem.on { background: var(--panel2); box-shadow: inset 3px 0 0 var(--accent); }
+  .mbox textarea { width: 100%; background: var(--bg); color: var(--text); border: 1px solid var(--line); border-radius: 4px; font: 12px monospace; }
+  .ptree { margin: 8px 0; max-height: 220px; overflow: auto; font-size: 12px; }
+  .ptree .pf { margin-top: 6px; font-weight: 600; display: flex; align-items: center; gap: 6px; }
+  .ptree .pt { padding-left: 20px; }
+  .sw.mini { width: 12px; height: 12px; display: inline-block; border-radius: 2px; }
+  .steps, .plog { font-size: 12px; padding-left: 20px; max-height: 200px; overflow: auto; }
+  .plog .ok { color: var(--ok); } .plog .bad { color: var(--bad); }
+  details summary { cursor: pointer; margin-top: 8px; color: var(--muted); }
+  .rule { display: flex; gap: 8px; align-items: center; padding: 4px 6px; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+  .rule.off { opacity: .45; }
+  .rule .rn { font-weight: 600; }
+  .rule select { max-width: 180px; }
+  .rule b { font-weight: normal; color: var(--muted); cursor: pointer; padding: 0 3px; }
+  .rule b:hover { color: var(--accent); }
+  #rList { max-height: 220px; overflow: auto; border: 1px solid var(--line); border-radius: 4px; margin-bottom: 6px; }
+  .jobbar { height: 8px; background: var(--bg); border-radius: 4px; overflow: hidden; margin-top: 10px; }
+  .jobbar div { height: 100%; width: 0; background: var(--accent); transition: width .3s; }
+  .tval { color: #e8c66a; font-size: 10px; margin-left: 6px; font-variant-numeric: tabular-nums; }
+  .tab:hover .tval { display: none; }
+  .ptag { position: absolute; left: 2px; top: 1px; z-index: 1; font-size: 9px; font-weight: 600; color: #ffd76a;
+    text-shadow: 0 0 3px #000, 0 0 2px #000; pointer-events: none; }
+  .ptag.low { color: #c9b27a; font-weight: normal; }
+  .tprice { margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--line); color: #ffd76a; }
+  .pgold { color: #ffd76a; font-weight: 600; }
+  table.cap { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 6px; }
+  table.cap th, table.cap td { text-align: left; padding: 3px 6px; border-bottom: 1px solid var(--line); }
+  table.cap tr.bad td { color: var(--bad); } table.cap tr.warn td { color: #e8c66a; }
+  table.cap button { font-size: 11px; padding: 1px 6px; }
+  #ac { position: fixed; z-index: 20; max-height: 320px; overflow: auto; background: var(--panel);
+    border: 1px solid var(--accent); border-radius: 4px; box-shadow: 0 6px 24px #000a; display: none; }
+  #ac .opt { display: flex; justify-content: space-between; gap: 12px; padding: 4px 8px; cursor: pointer; white-space: nowrap; }
+  #ac .opt.on, #ac .opt:hover { background: var(--panel2); }
+  #ac .opt b { color: var(--accent); font-weight: 600; }
+  #ac .kind { color: var(--muted); font-size: 11px; }
+  #ac .none { padding: 6px 8px; color: var(--muted); }
+</style>
+</head>
+<body>
+<header>
+  <h1>STASH MANAGER</h1>
+  <span id="conn" class="pill">connecting…</span>
+  <span id="near" class="pill" title="Stash panel open in game (closes automatically when you walk away)">stash ?</span>
+  <span id="err"></span>
+  <span class="spacer"></span>
+  <label class="muted"><input type="checkbox" id="auto" checked> auto refresh</label>
+  <button id="refresh">Refresh</button>
+</header>
+<main>
+  <aside id="tabs"></aside>
+  <section id="gridwrap"><div id="gridtitle"></div><div id="grid"></div></section>
+  <section id="search">
+    <h2>Search</h2>
+    <div class="row"><input type="text" id="q" placeholder="name / affix text, or /regex/"></div>
+    <h2>Affixes</h2>
+    <div id="affixRows"></div>
+    <div class="row"><button id="addAffix">+ affix condition</button>
+      <select id="affixMode"><option value="all">match all</option><option value="any">match any</option></select></div>
+    <div class="row">at least <input type="number" id="tierCount" min="0" max="6" value="0"> affixes with tier ≥ <input type="number" id="tierMin" min="1" max="8" value="7"></div>
+    <h2>Item</h2>
+    <div class="row" id="rarities"></div>
+    <div class="row">LP ≥ <input type="number" id="lp" min="0" value="0"> WW ≥ <input type="number" id="ww" min="0" value="0"> FP ≥ <input type="number" id="fp" min="0" value="0"></div>
+    <div class="row">corrupted <select id="corr"><option value="">any</option><option value="1">yes</option><option value="0">no</option></select>
+      lvl req ≤ <input type="number" id="lvl" min="0" value="0"></div>
+    <div class="row"><div class="msel" id="typesSel">
+      <button type="button" class="msel-btn"><span id="typesLabel">any item type</span><span>▾</span></button>
+      <div class="msel-panel" id="types"></div></div></div>
+    <div class="row">
+      <label><input type="checkbox" id="openP"> open prefix</label>
+      <label><input type="checkbox" id="openS"> open suffix</label></div>
+    <div class="row"><button id="clear">Clear</button>
+      <select id="saved"><option value="">saved searches…</option></select>
+      <button id="save">Save</button><button id="del">Delete</button></div>
+    <h2>Results <span id="count" class="muted"></span></h2>
+    <div id="results"></div>
+  </section>
+</main>
+<div id="tip"></div>
+<div id="ac"></div>
+
+<script>
+'use strict';
+const RARITY = [
+  ['Normal', 'normal', [0]], ['Magic', 'magic', [1, 2]], ['Rare', 'rare', [3, 4]], ['Exalted', 'exalted', []],
+  ['Unique', 'unique', [7]], ['Set', 'set', [8]], ['Legendary', 'legendary', [9]],
+];
+const rarityOf = it => it.exalted ? RARITY[3] : (RARITY.find(x => x[2].includes(it.rarity)) || RARITY[0]);
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const rollPct = r => Math.round(r / 255 * 100);
+
+let snap = null, selTab = null, matches = new Map();
+let GD = null; // game data maps: bases, uniques, affixes
+const TYPE_GROUPS = [
+  ['Armour', [0, 1, 4, 2, 3]],
+  ['Jewellery', [20, 21, 22]],
+  ['1H', [5, 6, 7, 8, 9, 10]],
+  ['2H', [12, 13, 14, 15, 16, 23]],
+  ['Off-hand', [17, 18, 19]],
+  ['Idols', [25, 26, 27, 28, 29, 30, 31, 32, 33, 41]],
+  ['Other', [34, 35, 36, 37, 38, 39, 101, 102, 103, 104, 106, 107, 108, 109]],
+];
+let TYPE_NAMES = new Map();
+let AFFIX_LIST = [];         // [{name, lower, kinds}] for the autocomplete
+let AFFIX_IDS = new Map(); // lowercased affix-list name -> Set(affix ids) (names differ from item affix names)
+let ICONS = {}; // "b<type>_<sub>" / "u<uniqueId>" -> png (tools/extract_icons.py)
+
+// ---------------------------------------------------------------- game data / enrichment
+
+async function loadGameData() {
+  const r = await fetch('/api/gamedata');
+  const j = await r.json();
+  if (!r.ok || !j.ok) throw new Error(j.error || 'gamedata failed');
+  GD = {
+    bases: new Map(j.bases.map(b => [b.id, { ...b, subs: new Map(b.subs.map(x => [x.id, x])) }])),
+    uniques: new Map(j.uniques.map(u => [u.id, u])),
+    affixes: new Map(j.affixes.map(a => [a.id, a])),
+  };
+  try {
+    const ir = await fetch('/icons/index.json');
+    if (ir.ok) ICONS = (await ir.json()).icons || {};
+  } catch {}
+  // affix name autocomplete: one entry per name, tagged with where it can appear
+  const byName = new Map();
+  for (const a of j.affixes) {
+    const n = (a.name || '').trim();
+    if (!n || a.special === 7) continue; // 7 = FakeUniqueMod (internal)
+    const e = byName.get(n) || { kinds: new Set(), ids: [] };
+    e.kinds.add(['prefix', 'suffix', 'special'][a.type] || '?');
+    e.ids.push(a.id);
+    byName.set(n, e);
+  }
+  AFFIX_IDS = new Map([...byName.entries()].map(([n, e]) => [n.toLowerCase(), new Set(e.ids)]));
+  AFFIX_LIST = [...byName.entries()].sort((a, b) => a[0].localeCompare(b[0]))
+    .map(([n, e]) => ({ name: n, lower: n.toLowerCase(), kinds: [...e.kinds].join(' / ') }));
+  let checked = new Set([...document.querySelectorAll('.typecb:checked')].map(c => +c.value));
+  if (!$('types').children.length) { // first build: restore last session's selection
+    try { checked = new Set(JSON.parse(localStorage.getItem('sm.lastFilters') || '{}').types || []); } catch {}
+  }
+  const names = new Map(j.bases.map(b => [b.id, (b.display || b.name).replace(/^(One|Two)-Handed /, '')]));
+  TYPE_NAMES = names;
+  $('types').innerHTML = '<div class="tools"><button type="button" id="typesClear">clear</button></div>'
+    + TYPE_GROUPS.map(([g, ids]) => `<div class="tg"><div class="ghead" title="toggle group">${g}</div>`
+    + ids.filter(id => names.has(id)).map(id => `<label class="opt"><input type="checkbox" class="typecb" value="${id}"${checked.has(id) ? ' checked' : ''}>`
+      + `${esc(names.get(id))}<span class="c" data-count="${id}"></span></label>`).join('') + '</div>').join('');
+  updateTypesLabel();
+}
+
+// Tier ranges are fractions for % stats (0.12 = 12%) and plain numbers for flat stats.
+function fmtValue(def, v, range) {
+  const top = Math.max(Math.abs(range[0]), Math.abs(range[1]));
+  if (Number.isInteger(range[0]) && Number.isInteger(range[1]) && def.modType !== 1) return String(Math.round(v));
+  if (def.modType === 1 || def.modType === 2 || top <= 3 && !Number.isInteger(range[1])) return `${Math.round(v * 100)}%`;
+  return top >= 3 ? String(Math.round(v)) : v.toFixed(1);
+}
+
+function enrich(it) {
+  if (!it || !GD) return;
+  const base = GD.bases.get(it.type);
+  const sub = base?.subs.get(it.subType);
+  it.baseName = base ? (base.display || base.name) : `type ${it.type}`;
+  it.subName = sub ? (sub.display || sub.name) : `${it.baseName} #${it.subType}`;
+  const uniq = it.rarity >= 7 ? GD.uniques.get(it.uniqueId) : null;
+  const icon = (uniq && ICONS['u' + it.uniqueId]) || ICONS[`b${it.type}_${it.subType}`];
+  it.icon = icon ? '/icons/' + encodeURIComponent(icon) : null;
+  for (const a of it.affixes || []) {
+    const def = GD.affixes.get(a.id);
+    if (!def) continue;
+    a.kind = ['P', 'S', 'X'][def.type] ?? '?';
+    a.title = def.title;
+    a.listName = def.name;
+    const range = def.tiers[a.tier - 1];
+    if (range) {
+      a.value = range[0] + (range[1] - range[0]) * a.roll / 255;
+      a.text = `${fmtValue(def, a.value, range)}  [${fmtValue(def, range[0], range)}-${fmtValue(def, range[1], range)}]`;
+    }
+  }
+  const afx = it.affixes || [];
+  // same rule as ItemData.isExaltedItem(): magic/rare item with any T6+ affix
+  it.exalted = it.rarity >= 1 && it.rarity <= 4 && afx.some(a => a.tier >= 6);
+  // sealed affixes don't occupy the 2 prefix / 2 suffix slots
+  it.prefixes = afx.filter(a => a.kind === 'P' && !a.sealed).length;
+  it.suffixes = afx.filter(a => a.kind === 'S' && !a.sealed).length;
+  if (uniq) it.displayName = uniq.display || uniq.name;
+  else if (it.name) it.displayName = it.name;
+  else if (it.rarity >= 1 && it.rarity <= 4) {
+    const p = afx.find(a => a.kind === 'P' && a.title), sfx = afx.find(a => a.kind === 'S' && a.title);
+    it.displayName = [p?.title, it.subName, sfx?.title].filter(Boolean).join(' ');
+  } else it.displayName = it.subName;
+}
+
+function enrichSnapshot(s) {
+  s.containers.forEach(c => c.items.forEach(enrich));
+  (s.inventory || []).forEach(enrich);
+  enrich(s.cursorItem);
+}
+
+// ---------------------------------------------------------------- data
+
+async function load() {
+  try {
+    const r = await fetch('/api/snapshot');
+    const j = await r.json();
+    if (!r.ok || !j.ok) throw new Error(j.error || 'snapshot failed');
+    if (!GD || !Object.keys(ICONS).length) await loadGameData();
+    enrichSnapshot(j);
+    snap = j;
+    $('conn').className = 'pill ok'; $('conn').textContent = 'connected';
+    $('err').textContent = '';
+    if (selTab === null) selTab = snap.activeTab;
+    render();
+  } catch (e) {
+    $('conn').className = 'pill bad'; $('conn').textContent = 'no game';
+    $('err').textContent = e.message;
+  }
+}
+
+function itemLabel(it) {
+  if (it.displayName) return it.displayName;
+  if (it.name) return it.name;
+  const r = rarityOf(it)[0];
+  return `${r} item (type ${it.type}/${it.subType}${it.uniqueId ? ', unique #' + it.uniqueId : ''})`;
+}
+
+function allItems() {
+  const out = [];
+  (snap?.containers || []).forEach(c => c.items.forEach((it, i) => out.push({ tab: c.index, key: c.index + ':' + i, it })));
+  return out;
+}
+
+// ---------------------------------------------------------------- search
+
+function readFilters() {
+  return {
+    q: $('q').value.trim(),
+    affixes: [...document.querySelectorAll('.affrow')].map(r => ({
+      text: r.querySelector('.at').value.trim().toLowerCase(),
+      tier: +r.querySelector('.atier').value || 0,
+      roll: +r.querySelector('.aroll').value || 0,
+    })).filter(a => a.text || a.tier || a.roll),
+    affixMode: $('affixMode').value,
+    tierCount: +$('tierCount').value || 0, tierMin: +$('tierMin').value || 7,
+    rarities: [...document.querySelectorAll('.rarcb:checked')].map(c => c.value),
+    lp: +$('lp').value || 0, ww: +$('ww').value || 0, fp: +$('fp').value || 0,
+    corr: $('corr').value, lvl: +$('lvl').value || 0,
+    types: [...document.querySelectorAll('.typecb:checked')].map(c => +c.value),
+    openP: $('openP').checked, openS: $('openS').checked,
+  };
+}
+function filtersActive(f) {
+  return f.q || f.affixes.length || f.tierCount || f.rarities.length || f.lp || f.ww || f.fp || f.corr || f.lvl
+    || f.types.length || f.openP || f.openS;
+}
+
+function textMatcher(q) {
+  if (!q) return null;
+  const m = q.match(/^\/(.+)\/$/);
+  if (m) { try { const re = new RegExp(m[1], 'i'); return s => re.test(s); } catch { return () => false; } }
+  const terms = q.toLowerCase().split(/\s+/);
+  return s => { const l = s.toLowerCase(); return terms.every(t => l.includes(t)); };
+}
+
+function matchItem(it, f, tm) {
+  if (f.rarities.length && !f.rarities.includes(rarityOf(it)[1])) return false;
+  if (it.lp < f.lp || it.ww < f.ww || it.fp < f.fp) return false;
+  if (f.corr && (it.corrupted ? '1' : '0') !== f.corr) return false;
+  if (f.lvl && (it.lvlReq ?? 0) > f.lvl) return false;
+  if (f.types?.length && !f.types.includes(it.type)) return false;
+  if (f.openP && (it.rarity > 4 || it.prefixes >= 2)) return false;
+  if (f.openS && (it.rarity > 4 || it.suffixes >= 2)) return false;
+  const afx = it.affixes || [];
+  if (f.tierCount && afx.filter(a => a.tier >= f.tierMin).length < f.tierCount) return false;
+  if (f.affixes.length) {
+    // picked from the list -> match by affix id (exact, and robust to item vs list naming);
+    // free text -> substring on either name
+    const nameOk = (c, a) => {
+      if (!c.text) return true;
+      const ids = AFFIX_IDS.get(c.text);
+      if (ids) return ids.has(a.id);
+      return (a.name || '').toLowerCase().includes(c.text) || (a.listName || '').toLowerCase().includes(c.text);
+    };
+    const ok = c => afx.some(a => nameOk(c, a)
+      && a.tier >= c.tier && rollPct(a.roll) >= c.roll);
+    if (f.affixMode === 'all' ? !f.affixes.every(ok) : !f.affixes.some(ok)) return false;
+  }
+  if (tm) {
+    const hay = [itemLabel(it), it.subName, it.baseName, ...afx.map(a => `T${a.tier} ${a.name} ${a.listName || ''}`)].join('\n');
+    if (!tm(hay)) return false;
+  }
+  return true;
+}
+
+function runSearch() {
+  const f = readFilters();
+  matches = new Map();
+  if (snap && filtersActive(f)) {
+    const tm = textMatcher(f.q);
+    for (const e of allItems()) if (matchItem(e.it, f, tm)) matches.set(e.key, e);
+  }
+  try { localStorage.setItem('sm.lastFilters', JSON.stringify(f)); } catch {}
+  render();
+}
+
+// ---------------------------------------------------------------- render
+
+function tabName(id) { return snap.tabs.find(t => t.id === id)?.name ?? `Tab ${id}`; }
+
+function renderTabs() {
+  const active = filtersActive(readFilters());
+  const hitsBy = {};
+  for (const e of matches.values()) hitsBy[e.tab] = (hitsBy[e.tab] || 0) + 1;
+  const cats = [...snap.categories].sort((a, b) => a.order - b.order);
+  const colorOf = i => (typeof TAB_STYLES !== 'undefined' && TAB_STYLES.colors[i]) || 'transparent';
+  const iconOf = i => {
+    const n = typeof TAB_STYLES !== 'undefined' && TAB_STYLES.icons[i];
+    return n ? `<img class="tico" src="/icons/tabicon_${encodeURIComponent(n)}.png" alt="">` : '';
+  };
+  const acts = (kind, id) => `<span class="acts"><b data-act="${kind}-up" data-id="${id}" title="move up">↑</b>`
+    + `<b data-act="${kind}-down" data-id="${id}" title="move down">↓</b>`
+    + `<b data-act="cfg-${kind === 'tab' ? 'tab' : 'folder'}" data-id="${id}" title="configure">⚙</b></span>`;
+  let html = `<div class="tabtools"><button data-act="new-tab" title="buy a new stash tab">+ Tab</button>`
+    + `<button data-act="new-folder">+ Folder</button></div>`;
+  for (const cat of cats) {
+    const tabs = snap.tabs.filter(t => t.categoryId === cat.id).sort((a, b) => a.order - b.order);
+    html += `<div class="folder" style="border-left-color:${colorOf(cat.color)}"><span>${iconOf(cat.icon)}${esc(cat.name)}`
+      + `</span>${acts('folder', cat.id)}</div>`;
+    for (const t of tabs) {
+      const c = snap.containers[t.id];
+      const n = c ? c.items.length : 0;
+      const cls = ['tab', t.id === selTab ? 'sel' : '', t.id === snap.activeTab ? 'ingame' : ''].join(' ');
+      html += `<div class="${cls}" data-tab="${t.id}" style="--tc:${colorOf(t.color)}"><span class="tname">${iconOf(t.icon)}${esc(t.name)}`
+        + `${t.priority ? ' <i class="pr" title="tab priority">⚑</i>' : ''}</span>${acts('tab', t.id)}`
+        + (active ? `<span class="hits">${hitsBy[t.id] || ''}</span>` : `<span class="n">${n}</span>`) + '</div>';
+    }
+  }
+  $('tabs').innerHTML = html;
+}
+
+function renderGrid() {
+  const c = snap.containers[selTab];
+  const grid = $('grid');
+  if (!c) { grid.innerHTML = ''; $('gridtitle').textContent = ''; return; }
+  const cell = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--cell'));
+  grid.style.width = c.w * cell + 1 + 'px';
+  grid.style.height = c.h * cell + 1 + 'px';
+  const active = filtersActive(readFilters());
+  $('gridtitle').textContent = `${tabName(selTab)} — ${c.items.length} items` + (selTab === snap.activeTab ? ' (open in game)' : '');
+  grid.innerHTML = c.items.map((it, i) => {
+    const key = selTab + ':' + i;
+    const r = rarityOf(it)[1];
+    const tiers = (it.affixes || []).map(a => a.tier).sort((a, b) => b - a).join('');
+    const cls = ['item', active ? (matches.has(key) ? 'hit' : 'dim') : ''].join(' ');
+    // game grid origin is bottom-left (y grows upward)
+    const top = (c.h - it.y - it.h) * cell + 1;
+    return `<div class="${cls}" data-key="${key}" style="left:${it.x * cell + 1}px;top:${top}px;`
+      + `width:${it.w * cell - 1}px;height:${it.h * cell - 1}px;border-color:var(--r-${r})">`
+      + (it.icon ? `<img src="${it.icon}" alt="" loading="lazy">` : '')
+      + `<span class="tiers">${tiers}</span></div>`;
+  }).join('');
+}
+
+function renderResults() {
+  const list = [...matches.values()];
+  $('count').textContent = filtersActive(readFilters()) ? `(${list.length})` : '';
+  $('results').innerHTML = list.slice(0, 300).map(e => {
+    const afx = (e.it.affixes || []).map(a => `T${a.tier} ${esc(a.name)}`).join(', ');
+    return `<div class="res" data-key="${e.key}" data-tab="${e.tab}">`
+      + `<div style="color:var(--r-${rarityOf(e.it)[1]})">${esc(itemLabel(e.it))}</div>`
+      + `<div class="where">${esc(tabName(e.tab))} @ ${e.it.x},${e.it.y}${afx ? ' · ' + afx : ''}</div></div>`;
+  }).join('') + (list.length > 300 ? `<div class="muted">…${list.length - 300} more</div>` : '');
+}
+
+function renderStatus() {
+  const near = $('near');
+  if (snap.stashOpen === true) { near.className = 'pill ok'; near.textContent = 'at stash'; }
+  else { near.className = 'pill'; near.textContent = 'stash closed'; }
+}
+
+function renderTypeCounts() {
+  const n = {};
+  for (const e of allItems()) n[e.it.type] = (n[e.it.type] || 0) + 1;
+  document.querySelectorAll('[data-count]').forEach(el => {
+    const c = n[el.dataset.count] || 0;
+    el.textContent = c || '';
+    el.closest('.opt').classList.toggle('zero', !c);
+  });
+}
+
+function updateTypesLabel() {
+  const sel = [...document.querySelectorAll('.typecb:checked')].map(c => TYPE_NAMES.get(+c.value));
+  $('typesLabel').textContent = !sel.length ? 'any item type'
+    : sel.length <= 3 ? sel.join(', ') : `${sel.slice(0, 2).join(', ')} +${sel.length - 2} more`;
+}
+
+function render() {
+  if (!snap) return;
+  updateTypesLabel();
+  renderTypeCounts();
+  renderStatus(); renderTabs(); renderGrid(); renderResults();
+}
+
+// ---------------------------------------------------------------- tooltip
+
+function showTip(it, x, y) {
+  const r = rarityOf(it);
+  const afx = (it.affixes || []).map(a =>
+    `<div class="af"><span class="${a.tier >= 5 ? 't' + Math.min(a.tier, 7) : ''}">${a.kind ? `<span class="muted">${a.kind}</span> ` : ''}T${a.tier} ${esc(a.name)}${a.sealed ? ' <span class="muted">(sealed)</span>' : ''}</span>`
+    + `<span class="muted">${a.text ? esc(a.text) + ' · ' : ''}${rollPct(a.roll)}%</span></div>`).join('');
+  const meta = [it.lvlReq ? 'lvl ' + it.lvlReq : '', it.fp ? 'FP ' + it.fp : '', it.lp ? 'LP ' + it.lp : '',
+    it.ww ? 'WW ' + it.ww : '', it.corrupted ? '<span style="color:var(--bad)">corrupted</span>' : ''].filter(Boolean).join(' · ');
+  const tip = $('tip');
+  tip.innerHTML = `<div class="head">${it.icon ? `<img src="${it.icon}" alt="">` : ''}<div>`
+    + `<div class="nm" style="color:var(--r-${r[1]})">${esc(itemLabel(it))}</div>`
+    + `<div class="muted">${r[0]} ${esc(it.subName || '')} · ${esc(it.baseName || '')} · ${it.w}×${it.h}</div>`
+    + (meta ? `<div>${meta}</div>` : '') + '</div></div>' + (afx ? `<div style="margin-top:6px">${afx}</div>` : '');
+  tip.style.display = 'block';
+  const w = tip.offsetWidth, h = tip.offsetHeight;
+  tip.style.left = Math.min(x + 14, innerWidth - w - 8) + 'px';
+  tip.style.top = Math.min(y + 14, innerHeight - h - 8) + 'px';
+}
+
+// ---------------------------------------------------------------- events
+
+function addAffixRow(a = {}) {
+  const d = document.createElement('div');
+  d.className = 'row affrow';
+  d.innerHTML = `<input type="text" class="at" autocomplete="off" placeholder="affix (type to pick)" value="${esc(a.text || '')}">
+    T≥<input type="number" class="atier" min="0" max="8" value="${a.tier || ''}">
+    roll≥<input type="number" class="aroll" min="0" max="100" value="${a.roll || ''}">%
+    <button class="arm">✕</button>`;
+  d.querySelector('.arm').onclick = () => { d.remove(); runSearch(); };
+  $('affixRows').appendChild(d);
+}
+
+function applyFilters(f) {
+  $('q').value = f.q || '';
+  $('affixRows').innerHTML = '';
+  (f.affixes || []).forEach(addAffixRow);
+  $('affixMode').value = f.affixMode || 'all';
+  $('tierCount').value = f.tierCount || 0; $('tierMin').value = f.tierMin || 7;
+  document.querySelectorAll('.rarcb').forEach(c => c.checked = (f.rarities || []).includes(c.value));
+  $('lp').value = f.lp || 0; $('ww').value = f.ww || 0; $('fp').value = f.fp || 0;
+  $('corr').value = f.corr || ''; $('lvl').value = f.lvl || 0;
+  const types = new Set(f.types || (f.base ? [+f.base] : []));
+  document.querySelectorAll('.typecb').forEach(c => c.checked = types.has(+c.value));
+  $('openP').checked = !!f.openP; $('openS').checked = !!f.openS;
+}
+
+// ---------------------------------------------------------------- affix autocomplete
+
+const ac = { input: null, items: [], sel: -1 };
+
+function acShow(input) {
+  ac.input = input;
+  const q = input.value.trim().toLowerCase();
+  const starts = [], contains = [];
+  for (const a of AFFIX_LIST) {
+    if (!q || a.lower.startsWith(q)) starts.push(a);
+    else if (a.lower.includes(q)) contains.push(a);
+  }
+  ac.items = starts.concat(contains).slice(0, 80);
+  ac.sel = ac.items.length ? 0 : -1;
+  const hl = n => {
+    if (!q) return esc(n);
+    const i = n.toLowerCase().indexOf(q);
+    return esc(n.slice(0, i)) + '<b>' + esc(n.slice(i, i + q.length)) + '</b>' + esc(n.slice(i + q.length));
+  };
+  const box = $('ac');
+  box.innerHTML = ac.items.length
+    ? ac.items.map((a, i) => `<div class="opt${i === ac.sel ? ' on' : ''}" data-i="${i}"><span>${hl(a.name)}</span><span class="kind">${a.kinds}</span></div>`).join('')
+    : '<div class="none">no matching affix</div>';
+  const r = input.getBoundingClientRect();
+  box.style.left = r.left + 'px';
+  box.style.top = r.bottom + 2 + 'px';
+  box.style.minWidth = Math.max(r.width, 260) + 'px';
+  box.style.maxHeight = Math.min(320, innerHeight - r.bottom - 12) + 'px';
+  box.style.display = 'block';
+}
+function acHide() { $('ac').style.display = 'none'; ac.input = null; }
+function acMark() {
+  document.querySelectorAll('#ac .opt').forEach((el, i) => el.classList.toggle('on', i === ac.sel));
+  document.querySelector('#ac .opt.on')?.scrollIntoView({ block: 'nearest' });
+}
+function acPick(i) {
+  const a = ac.items[i];
+  if (!a || !ac.input) return;
+  ac.input.value = a.name;
+  acHide();
+  runSearch();
+}
+
+$('affixRows').addEventListener('focusin', e => { if (e.target.classList.contains('at')) acShow(e.target); });
+$('affixRows').addEventListener('input', e => { if (e.target.classList.contains('at')) acShow(e.target); });
+$('affixRows').addEventListener('focusout', e => { if (e.target.classList.contains('at')) setTimeout(acHide, 150); });
+$('affixRows').addEventListener('keydown', e => {
+  if (!e.target.classList.contains('at') || !ac.input) return;
+  if (e.key === 'ArrowDown') { ac.sel = Math.min(ac.sel + 1, ac.items.length - 1); acMark(); e.preventDefault(); }
+  else if (e.key === 'ArrowUp') { ac.sel = Math.max(ac.sel - 1, 0); acMark(); e.preventDefault(); }
+  else if (e.key === 'Enter' && ac.sel >= 0) { acPick(ac.sel); e.preventDefault(); }
+  else if (e.key === 'Escape') acHide();
+});
+$('ac').addEventListener('mousedown', e => {
+  const o = e.target.closest('.opt');
+  if (o) { e.preventDefault(); acPick(+o.dataset.i); }
+});
+$('search').addEventListener('scroll', acHide);
+
+function savedSearches() { try { return JSON.parse(localStorage.getItem('sm.saved') || '{}'); } catch { return {}; } }
+function renderSaved() {
+  const s = savedSearches();
+  $('saved').innerHTML = '<option value="">saved searches…</option>'
+    + Object.keys(s).sort().map(k => `<option>${esc(k)}</option>`).join('');
+}
+
+$('rarities').innerHTML = RARITY.map(([label, key]) =>
+  `<label class="rar" style="color:var(--r-${key})"><input type="checkbox" class="rarcb" value="${key}">${label}</label>`).join('');
+
+$('search').addEventListener('input', runSearch);
+$('addAffix').onclick = () => addAffixRow();
+$('types').addEventListener('click', e => {
+  if (e.target.id === 'typesClear') {
+    document.querySelectorAll('.typecb').forEach(b => b.checked = false);
+    return runSearch();
+  }
+  const g = e.target.closest('.ghead');
+  if (!g) return;
+  const boxes = [...g.closest('.tg').querySelectorAll('.typecb')];
+  const on = !boxes.every(b => b.checked);
+  boxes.forEach(b => b.checked = on);
+  runSearch();
+});
+$('typesSel').querySelector('.msel-btn').onclick = () => $('typesSel').classList.toggle('open');
+document.addEventListener('mousedown', e => {
+  if (!e.target.closest('#typesSel')) $('typesSel').classList.remove('open');
+});
+$('clear').onclick = () => { applyFilters({}); runSearch(); };
+$('refresh').onclick = load;
+$('save').onclick = () => {
+  const name = $('q').value.trim() || `search ${Object.keys(savedSearches()).length + 1}`;
+  const s = savedSearches(); s[name] = readFilters();
+  try { localStorage.setItem('sm.saved', JSON.stringify(s)); } catch {}
+  renderSaved(); $('saved').value = name;
+};
+$('saved').onchange = e => { const f = savedSearches()[e.target.value]; if (f) { applyFilters(f); runSearch(); } };
+$('del').onclick = () => {
+  const s = savedSearches(); delete s[$('saved').value];
+  try { localStorage.setItem('sm.saved', JSON.stringify(s)); } catch {}
+  renderSaved();
+};
+
+$('tabs').onclick = e => { const t = e.target.closest('.tab'); if (t) { selTab = +t.dataset.tab; render(); } };
+$('results').onclick = e => { const r = e.target.closest('.res'); if (r) { selTab = +r.dataset.tab; render(); } };
+$('grid').onmousemove = e => {
+  const el = e.target.closest('.item');
+  if (!el) { $('tip').style.display = 'none'; return; }
+  const [tab, i] = el.dataset.key.split(':').map(Number);
+  showTip(snap.containers[tab].items[i], e.clientX, e.clientY);
+};
+$('grid').onmouseleave = () => $('tip').style.display = 'none';
+
+try { applyFilters(JSON.parse(localStorage.getItem('sm.lastFilters') || '{}')); } catch {}
+renderSaved();
+load().then(runSearch);
+setInterval(() => { if ($('auto').checked && !document.hidden && !window.autoRefreshPaused) load().then(runSearch); }, 3000);
+</script>
+<script src="configure.js"></script>
+<script src="presets.js"></script>
+<script src="sort.js"></script>
+<script src="prices.js"></script>
+</body>
+</html>

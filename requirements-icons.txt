@@ -1,0 +1,2 @@
+# Optional: tools/extract_icons.py reads item art from your local game files.
+UnityPy==1.25.4

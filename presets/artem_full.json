@@ -1,0 +1,341 @@
+{
+ "name": "Artem-style full layout",
+ "version": 1,
+ "description": "Popular community layout (Artem): exalts per slot, uniques split by LP / Weaver's Will (+overflow), legendary, sets, idols by size + altars, crafting bases (magic/rare), 3 dumps. 24 tabs.",
+ "folders": [
+  {
+   "name": "Exalts",
+   "icon": 6,
+   "color": 15,
+   "tabs": [
+    {
+     "name": "1H Weapons",
+     "icon": 6,
+     "color": 15,
+     "priority": {
+      "rarity": 64,
+      "type": {
+       "types": [
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+       ],
+       "subTypes": []
+      }
+     }
+    },
+    {
+     "name": "2H Weapons",
+     "icon": 7,
+     "color": 15,
+     "priority": {
+      "rarity": 64,
+      "type": {
+       "types": [
+        12,
+        13,
+        14,
+        15,
+        16,
+        23
+       ],
+       "subTypes": []
+      }
+     }
+    },
+    {
+     "name": "Helmets",
+     "icon": 13,
+     "color": 15,
+     "priority": {
+      "rarity": 64,
+      "type": {
+       "types": [
+        0
+       ],
+       "subTypes": []
+      }
+     }
+    },
+    {
+     "name": "Body Armor",
+     "icon": 9,
+     "color": 15,
+     "priority": {
+      "rarity": 64,
+      "type": {
+       "types": [
+        1
+       ],
+       "subTypes": []
+      }
+     }
+    },
+    {
+     "name": "Gloves",
+     "icon": 12,
+     "color": 15,
+     "priority": {
+      "rarity": 64,
+      "type": {
+       "types": [
+        4
+       ],
+       "subTypes": []
+      }
+     }
+    },
+    {
+     "name": "Boots",
+     "icon": 11,
+     "color": 15,
+     "priority": {
+      "rarity": 64,
+      "type": {
+       "types": [
+        3
+       ],
+       "subTypes": []
+      }
+     }
+    },
+    {
+     "name": "Belts",
+     "icon": 10,
+     "color": 15,
+     "priority": {
+      "rarity": 64,
+      "type": {
+       "types": [
+        2
+       ],
+       "subTypes": []
+      }
+     }
+    },
+    {
+     "name": "Off-hands",
+     "icon": 16,
+     "color": 15,
+     "priority": {
+      "rarity": 64,
+      "type": {
+       "types": [
+        17,
+        18,
+        19
+       ],
+       "subTypes": []
+      }
+     }
+    },
+    {
+     "name": "Jewellery",
+     "icon": 8,
+     "color": 15,
+     "priority": {
+      "rarity": 64,
+      "type": {
+       "types": [
+        20,
+        21,
+        22
+       ],
+       "subTypes": []
+      }
+     }
+    }
+   ]
+  },
+  {
+   "name": "Uniques",
+   "icon": 23,
+   "color": 12,
+   "tabs": [
+    {
+     "name": "Uniques",
+     "icon": 23,
+     "color": 12,
+     "priority": {
+      "rarity": 8,
+      "potential": {
+       "MaxLegendaryPotential": 0,
+       "MaxWeaversWill": 0
+      }
+     }
+    },
+    {
+     "name": "Uniques 2",
+     "icon": 23,
+     "color": 12,
+     "priority": {
+      "rarity": 8,
+      "potential": {
+       "MaxLegendaryPotential": 0,
+       "MaxWeaversWill": 0
+      }
+     }
+    },
+    {
+     "name": "LP Uniques",
+     "icon": 23,
+     "color": 12,
+     "priority": {
+      "rarity": 8,
+      "potential": {
+       "MinLegendaryPotential": 1,
+       "MaxWeaversWill": 0
+      }
+     }
+    },
+    {
+     "name": "WW Uniques",
+     "icon": 23,
+     "color": 10,
+     "priority": {
+      "rarity": 8,
+      "potential": {
+       "MinWeaversWill": 1
+      }
+     }
+    }
+   ]
+  },
+  {
+   "name": "Legendary & Sets",
+   "icon": 14,
+   "color": 11,
+   "tabs": [
+    {
+     "name": "Legendary",
+     "icon": 14,
+     "color": 11,
+     "priority": {
+      "rarity": 32
+     }
+    },
+    {
+     "name": "Sets",
+     "icon": 14,
+     "color": 9,
+     "priority": {
+      "rarity": 16
+     }
+    }
+   ]
+  },
+  {
+   "name": "Idols",
+   "icon": 20,
+   "color": 16,
+   "tabs": [
+    {
+     "name": "Small & Minor",
+     "icon": 20,
+     "color": 16,
+     "priority": {
+      "type": {
+       "types": [
+        25,
+        26
+       ],
+       "subTypes": []
+      }
+     }
+    },
+    {
+     "name": "Humble & Stout",
+     "icon": 20,
+     "color": 16,
+     "priority": {
+      "type": {
+       "types": [
+        27,
+        28
+       ],
+       "subTypes": []
+      }
+     }
+    },
+    {
+     "name": "Grand & Large",
+     "icon": 20,
+     "color": 16,
+     "priority": {
+      "type": {
+       "types": [
+        29,
+        30
+       ],
+       "subTypes": []
+      }
+     }
+    },
+    {
+     "name": "Ornate, Huge, Adorned",
+     "icon": 20,
+     "color": 16,
+     "priority": {
+      "type": {
+       "types": [
+        31,
+        32,
+        33
+       ],
+       "subTypes": []
+      }
+     }
+    },
+    {
+     "name": "Idol Altars",
+     "icon": 20,
+     "color": 17,
+     "priority": {
+      "type": {
+       "types": [
+        41
+       ],
+       "subTypes": []
+      }
+     }
+    }
+   ]
+  },
+  {
+   "name": "Other",
+   "icon": 0,
+   "color": 0,
+   "tabs": [
+    {
+     "name": "Crafting Bases",
+     "icon": 17,
+     "color": 0,
+     "priority": {
+      "rarity": 6
+     }
+    },
+    {
+     "name": "Dump",
+     "icon": 22,
+     "color": 1,
+     "priority": null
+    },
+    {
+     "name": "Dump 2",
+     "icon": 22,
+     "color": 1,
+     "priority": null
+    },
+    {
+     "name": "Dump 3",
+     "icon": 22,
+     "color": 1,
+     "priority": null
+    }
+   ]
+  }
+ ]
+}

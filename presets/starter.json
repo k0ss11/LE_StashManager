@@ -1,0 +1,127 @@
+{
+ "name": "Starter (8 tabs)",
+ "version": 1,
+ "description": "Compact auto-sort layout: exalted by slot group, uniques, legendary/set, idols, crafting bases, dump. Specific tabs first, dump last (game routes left to right).",
+ "folders": [
+  {
+   "name": "Stash",
+   "icon": 0,
+   "color": 0,
+   "tabs": [
+    {
+     "name": "Exalted Weapons",
+     "icon": 6,
+     "color": 15,
+     "priority": {
+      "rarity": 64,
+      "type": {
+       "types": [
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        12,
+        13,
+        14,
+        15,
+        16,
+        23
+       ],
+       "subTypes": []
+      }
+     }
+    },
+    {
+     "name": "Exalted Armour",
+     "icon": 9,
+     "color": 15,
+     "priority": {
+      "rarity": 64,
+      "type": {
+       "types": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        17,
+        18,
+        19
+       ],
+       "subTypes": []
+      }
+     }
+    },
+    {
+     "name": "Exalted Jewellery",
+     "icon": 8,
+     "color": 15,
+     "priority": {
+      "rarity": 64,
+      "type": {
+       "types": [
+        20,
+        21,
+        22
+       ],
+       "subTypes": []
+      }
+     }
+    },
+    {
+     "name": "Uniques",
+     "icon": 23,
+     "color": 12,
+     "priority": {
+      "rarity": 8
+     }
+    },
+    {
+     "name": "Legendary & Set",
+     "icon": 14,
+     "color": 11,
+     "priority": {
+      "rarity": 48
+     }
+    },
+    {
+     "name": "Idols",
+     "icon": 20,
+     "color": 16,
+     "priority": {
+      "type": {
+       "types": [
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33
+       ],
+       "subTypes": []
+      }
+     }
+    },
+    {
+     "name": "Crafting Bases",
+     "icon": 17,
+     "color": 0,
+     "priority": {
+      "rarity": 6
+     }
+    },
+    {
+     "name": "Dump",
+     "icon": 22,
+     "color": 1,
+     "priority": null
+    }
+   ]
+  }
+ ]
+}

@@ -1,0 +1,2 @@
+# Runtime: injects agent/agent.js into the game (main-thread calls for stash actions).
+frida==17.8.2
